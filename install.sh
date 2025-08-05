@@ -1,13 +1,8 @@
 #!/bin/bash
 
+KLIPPER_PATH_K1_DEFAULT="/usr/share/klipper"
 KLIPPER_PATH="${HOME}/klipper"
 AUTOTUNETMC_PATH="${HOME}/klipper_tmc_autotune"
-
-if [[ -e ${KLIPPER_PATH}/klippy/plugins/ ]]; then
-    KLIPPER_PLUGINS_PATH="${KLIPPER_PATH}/klippy/plugins/"
-else
-    KLIPPER_PLUGINS_PATH="${KLIPPER_PATH}/klippy/extras/"
-fi
 
 set -eu
 export LC_ALL=C
