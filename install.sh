@@ -1,26 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 KLIPPER_PATH_K1_DEFAULT="/usr/share/klipper"
-KLIPPER_PATH="${HOME}/klipper"
-AUTOTUNETMC_PATH="${HOME}/klipper_tmc_autotune"
+KLIPPER_PATH=`curl localhost:7125/printer/info | jq -r .result.klipper_path`
+AUTOTUNETMC_PATH="/usr/data/klipper_tmc_autotune"
 
 set -eu
 export LC_ALL=C
-
-
-function preflight_checks {
-    if [ "$EUID" -eq 0 ]; then
-        echo "[PRE-CHECK] This script must not be run as root!"
-        exit -1
-    fi
-
-    if [ "$(sudo systemctl list-units --full -all -t service --no-legend | grep -F 'klipper.service')" ]; then
-        printf "[PRE-CHECK] Klipper service found! Continuing...\n\n"
-    else
-        echo "[ERROR] Klipper service not found, please install Klipper first!"
-        exit -1
-    fi
-}
 
 function check_download {
     local autotunedirname autotunebasename
@@ -29,8 +14,9 @@ function check_download {
 
     if [ ! -d "${AUTOTUNETMC_PATH}" ]; then
         echo "[DOWNLOAD] Downloading Autotune TMC repository..."
-        if git -C $autotunedirname clone https://github.com/andrewmcgr/klipper_tmc_autotune.git $autotunebasename; then
+        if git -C $autotunedirname clone https://github.com/evgarthub/klipper_tmc_autotune_k1.git $autotunebasename; then
             chmod +x ${AUTOTUNETMC_PATH}/install.sh
+            chmod +x ${AUTOTUNETMC_PATH}/uninstall.sh
             printf "[DOWNLOAD] Download complete!\n\n"
         else
             echo "[ERROR] Download of Autotune TMC git repository failed!"
@@ -44,14 +30,21 @@ function check_download {
 function link_extension {
     echo "[INSTALL] Linking extension to Klipper..."
 
-    ln -srfn "${AUTOTUNETMC_PATH}/autotune_tmc.py" "${KLIPPER_PLUGINS_PATH}/autotune_tmc.py"
-    ln -srfn "${AUTOTUNETMC_PATH}/motor_constants.py" "${KLIPPER_PLUGINS_PATH}/motor_constants.py"
-    ln -srfn "${AUTOTUNETMC_PATH}/motor_database.cfg" "${KLIPPER_PLUGINS_PATH}/motor_database.cfg"
+    if [ x"$KLIPPER_PATH" == x"null" ]; then
+        KLIPPER_PATH=KLIPPER_PATH_K1_DEFAULT
+        printf "Falling back to default klipper path: $KLIPPER_PATH\n"
+    fi
+
+    printf "Found klipper path: $KLIPPER_PATH\n"
+
+    ln -sf "${AUTOTUNETMC_PATH}/autotune_tmc.py" "${KLIPPER_PATH}/klippy/extras/autotune_tmc.py"
+    ln -sf "${AUTOTUNETMC_PATH}/motor_constants.py" "${KLIPPER_PATH}/klippy/extras/motor_constants.py"
+    ln -sf "${AUTOTUNETMC_PATH}/motor_database.cfg" "${KLIPPER_PATH}/klippy/extras/motor_database.cfg"
 }
 
 function restart_klipper {
     echo "[POST-INSTALL] Restarting Klipper..."
-    sudo systemctl restart klipper
+    /etc/init.d/S55klipper_service restart
 }
 
 
@@ -61,7 +54,6 @@ printf "======================================\n\n"
 
 
 # Run steps
-preflight_checks
 check_download
 link_extension
 restart_klipper
