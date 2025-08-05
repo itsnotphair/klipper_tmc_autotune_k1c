@@ -20,7 +20,7 @@ In particular, it enables StealthChop by default on Z motors and extruders, Cool
 To install this plugin, run the installation script using the following command over SSH. This script will download this GitHub repository to your RaspberryPi home directory, and symlink the files in the Klipper extra folder.
 
 ```bash
-wget -O - https://raw.githubusercontent.com/andrewmcgr/klipper_tmc_autotune/main/install.sh | bash
+wget -O - https://raw.githubusercontent.com/itsnotphair/klipper_tmc_autotune_k1c/main/install.sh | bash
 ```
 
 Then, add the following to your `moonraker.conf` to enable automatic updates:
